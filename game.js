@@ -46,8 +46,8 @@ function create() {
 
     // モード抽選
     let rand = Math.random();
-    if (rand < 0.9) gameMode = "kenty";
-    else if (rand < 0.06) gameMode = "bucho";
+    if (rand < 0.5) gameMode = "kenty";
+    else if (rand < 0.5) gameMode = "bucho";
 
     // グリッド初期化
     for (let r = 0; r < ROWS; r++) {
@@ -299,7 +299,7 @@ function startKenty(scene) {
     let btn = scene.add.text(180, 450, " ツモ！ ", { fontSize: '50px', backgroundColor: '#d00', padding: 20 }).setOrigin(0.5).setInteractive().setDepth(201);
     
     btn.on('pointerdown', () => {
-        txt.setText("目の前でTKが6ピンをツモった。\nゲームオーバー。\n次こそ九蓮宝燈！");
+        txt.setText("先に6ピンツモであがられてしまった。\nゲームオーバー。\n次こそ九蓮宝燈！");
         txt.setColor('#ff0');
         btn.destroy();
         isGameOver = true;
