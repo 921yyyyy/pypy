@@ -4,118 +4,146 @@ const config = {
     height: 640,
     parent: 'game-container',
     backgroundColor: '#222',
-    scene: {
-        preload: preload,
-        create: create,
-        update: update
-    }
+    scene: { preload, create, update }
 };
 
 const game = new Phaser.Game(config);
 
-let score = 0;
-let bestScore = localStorage.getItem('bestScore') || 0;
-let grid = [];
-const ROWS = 12;
+// ゲーム定数
 const COLS = 6;
-const BLOCK_SIZE = 32;
-let gameMode = "normal"; // normal, bucho, kenty
+const ROWS = 12;
+const BLOCK_SIZE = 40;
+const OFFSET_X = 60;
+const OFFSET_Y = 80;
+
+let puyoGroup;
+let activePuyo = null;
+let gameMode = "normal"; 
 let isGameOver = false;
+let score = 0;
+let timer = 0;
 
 function preload() {
-    // ぷよの代わり（本来は画像）
-    this.load.image('puyo1', 'https://placehold.jp/30/ff0000/ffffff/32x32.png?text=赤');
-    this.load.image('puyo2', 'https://placehold.jp/30/00ff00/ffffff/32x32.png?text=緑');
-    this.load.image('puyo3', 'https://placehold.jp/30/0000ff/ffffff/32x32.png?text=青');
-    this.load.image('puyo4', 'https://placehold.jp/30/ffff00/000000/32x32.png?text=黄');
-    this.load.image('ojama', 'https://placehold.jp/30/888888/ffffff/32x32.png?text=危');
+    // 簡易的なぷよ（色のついた円）を作成
+    const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+    const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0x888888];
+    colors.forEach((color, i) => {
+        graphics.clear();
+        graphics.fillStyle(color, 1);
+        graphics.fillCircle(15, 15, 15);
+        graphics.generateTexture(`puyo${i}`, 30, 30);
+    });
 }
 
 function create() {
     const scene = this;
     
-    // --- 抽選 ---
+    // モード抽選 (部長5%, ケンティー1%)
     let rand = Math.random();
     if (rand < 0.01) gameMode = "kenty";
     else if (rand < 0.06) gameMode = "bucho";
 
-    // --- 背景・UI ---
-    this.add.rectangle(180, 240, COLS * BLOCK_SIZE + 4, ROWS * BLOCK_SIZE + 4, 0x444444); // 枠線
-    this.add.rectangle(180, 240, COLS * BLOCK_SIZE, ROWS * BLOCK_SIZE, 0x000000); // 盤面
+    // 盤面の枠
+    this.add.rectangle(OFFSET_X + (COLS * BLOCK_SIZE) / 2, OFFSET_Y + (ROWS * BLOCK_SIZE) / 2, 
+        COLS * BLOCK_SIZE, ROWS * BLOCK_SIZE, 0x000000).setStrokeStyle(2, 0xffffff);
     
-    let scoreText = this.add.text(10, 10, `Score: ${score}`, { fontSize: '18px', fill: '#fff' });
-    let bestText = this.add.text(10, 35, `Best: ${bestScore}`, { fontSize: '14px', fill: '#aaa' });
+    // スコア表示
+    let scoreText = this.add.text(20, 20, `Score: ${score}`, { fontSize: '20px', fill: '#fff' });
+    this.add.text(180, 30, "楽しいpypy", { fontSize: '24px', fontStyle: 'bold' }).setOrigin(0.5);
 
-    this.add.text(180, 50, "楽しいpypy", { fontSize: '24px', fontStyle: 'bold' }).setOrigin(0.5);
+    puyoGroup = this.add.group();
 
-    // --- 操作ボタン (スマホ用) ---
-    const btnStyle = { fontSize: '32px', backgroundColor: '#555', padding: 10 };
-    // 左下：回転
-    let rotateBtn = this.add.text(50, 550, "🔄", btnStyle).setInteractive();
-    // 右下：十字
-    let leftBtn = this.add.text(200, 550, "⬅️", btnStyle).setInteractive();
-    let downBtn = this.add.text(260, 550, "⬇️", btnStyle).setInteractive();
-    let rightBtn = this.add.text(320, 550, "➡️", btnStyle).setInteractive();
+    // 最初のぷよを生成
+    spawnPuyo.call(this);
 
-    // --- 特殊モードタイマー ---
+    // 操作ボタン
+    createControls.call(this);
+
+    // 7秒後の特殊イベント
     this.time.delayedCall(7000, () => {
-        if (gameMode !== "normal") triggerSpecialMode(scene);
+        if (gameMode !== "normal") triggerSpecialEvent(scene);
     });
 }
 
-function update() {
+function spawnPuyo() {
     if (isGameOver) return;
-    // ぷよの落下・移動ロジック（簡略化）
+    const colorIdx = Math.floor(Math.random() * 4);
+    activePuyo = this.add.sprite(OFFSET_X + BLOCK_SIZE * 2 + 20, OFFSET_Y + 20, `puyo${colorIdx}`);
+    activePuyo.colorIdx = colorIdx;
 }
 
-function triggerSpecialMode(scene) {
-    // 全停止・明滅
+function update(time, delta) {
+    if (isGameOver || !activePuyo) return;
+
+    timer += delta;
+    if (timer > 800) { // 落下スピード
+        activePuyo.y += BLOCK_SIZE;
+        timer = 0;
+        
+        // 底に着いたか判定
+        if (activePuyo.y > OFFSET_Y + (ROWS - 1) * BLOCK_SIZE) {
+            activePuyo.y = OFFSET_Y + (ROWS - 1) * BLOCK_SIZE + 20;
+            puyoGroup.add(activePuyo);
+            spawnPuyo.call(this);
+        }
+    }
+}
+
+function createControls() {
+    const scene = this;
+    const btnStyle = { fontSize: '40px', backgroundColor: '#444', padding: 10 };
+
+    // 回転（便宜上、色を変える処理にしています）
+    this.add.text(40, 550, "🔄", btnStyle).setInteractive()
+        .on('pointerdown', () => { 
+            activePuyo.colorIdx = (activePuyo.colorIdx + 1) % 4;
+            activePuyo.setTexture(`puyo${activePuyo.colorIdx}`);
+        });
+
+    // 左右移動
+    this.add.text(180, 550, "⬅️", btnStyle).setInteractive()
+        .on('pointerdown', () => { if(activePuyo.x > OFFSET_X + 40) activePuyo.x -= BLOCK_SIZE; });
+    
+    this.add.text(280, 550, "➡️", btnStyle).setInteractive()
+        .on('pointerdown', () => { if(activePuyo.x < OFFSET_X + (COLS-1)*BLOCK_SIZE) activePuyo.x += BLOCK_SIZE; });
+}
+
+function triggerSpecialEvent(scene) {
+    // 動きを止める
+    isGameOver = true; 
+    
+    // 明滅
     scene.tweens.add({
-        targets: [], // 画面上のぷよ全てを対象に
+        targets: activePuyo,
         alpha: 0,
         duration: 200,
         yoyo: true,
         repeat: 3,
         onComplete: () => {
-            // 消滅
+            activePuyo.destroy();
             if (gameMode === "bucho") {
-                startBuchoEvent(scene);
-            } else if (gameMode === "kenty") {
+                scene.time.delayedCall(1000, () => {
+                    scene.add.text(180, 300, "腹括れや！！", { fontSize: '50px', color: '#f00', fontStyle: 'bold' }).setOrigin(0.5);
+                    scene.time.delayedCall(2000, () => {
+                        // おじゃまぷよ大量落下
+                        for(let i=0; i<150; i++) {
+                            scene.add.image(Phaser.Math.Between(50, 310), Phaser.Math.Between(-1000, 0), 'puyo4');
+                        }
+                    });
+                });
+            } else {
                 startKentyEvent(scene);
             }
         }
     });
 }
 
-function startBuchoEvent(scene) {
-    scene.time.delayedCall(1000, () => {
-        let txt = scene.add.text(180, 320, "腹括れや！！", { fontSize: '48px', color: '#ff0000', fontStyle: 'bold' }).setOrigin(0.5);
-        scene.time.delayedCall(2000, () => {
-            txt.destroy();
-            // おじゃまぷよ大量落下（演出）
-            for(let i=0; i<100; i++) {
-                scene.add.image(Phaser.Math.Between(100, 260), -50 - (i*20), 'ojama');
-            }
-        });
-    });
-}
-
 function startKentyEvent(scene) {
-    scene.time.delayedCall(1000, () => {
-        // 画面を雀卓に（緑の背景）
-        scene.add.rectangle(180, 320, 360, 640, 0x006600).setDepth(100);
-        let msg = scene.add.text(180, 200, "九蓮宝燈聴牌！\nボタンを押せ！\n(6ピンツモで役満！)", 
-            { fontSize: '24px', align: 'center', color: '#fff' }).setOrigin(0.5).setDepth(101);
-        
-        let btn = scene.add.text(180, 400, "ツモ！！！", { fontSize: '40px', backgroundColor: '#f00', padding: 20 })
-            .setOrigin(0.5).setInteractive().setDepth(101);
-
-        btn.on('pointerdown', () => {
-            msg.destroy();
-            btn.destroy();
-            scene.add.text(180, 320, "目の前でTKが\n6ピンをツモった。\n\nゲームオーバー。\n次こそ九蓮宝燈！", 
-                { fontSize: '22px', align: 'center', color: '#ffea00' }).setOrigin(0.5).setDepth(102);
-            isGameOver = true;
-        });
+    scene.add.rectangle(180, 320, 360, 640, 0x006600).setDepth(10);
+    scene.add.text(180, 200, "九蓮宝燈聴牌！\nボタンを押せ！", { fontSize: '30px', align: 'center' }).setOrigin(0.5).setDepth(11);
+    let btn = scene.add.text(180, 400, " ツモ！ ", { fontSize: '40px', backgroundColor: '#f00' }).setOrigin(0.5).setInteractive().setDepth(11);
+    
+    btn.on('pointerdown', () => {
+        scene.add.text(180, 320, "目の前でTKが\n6ピンをツモった。\n\nGame Over", { fontSize: '25px', color: '#ff0', align: 'center' }).setOrigin(0.5).setDepth(12);
     });
 }
