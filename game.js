@@ -40,7 +40,7 @@ function create() {
     
     // モード抽選 (部長5%, ケンティー1%)
     let rand = Math.random();
-    if (rand < 0.01) gameMode = "kenty";
+    if (rand < 0.9) gameMode = "kenty";
     else if (rand < 0.06) gameMode = "bucho";
 
     // 盤面の枠
