@@ -3,12 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>楽しいpypy</title>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <title>次こそ九蓮宝燈</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        body { margin: 0; background: #000; color: #fff; font-family: "MS UI Gothic", "Meiryo", sans-serif; overflow: hidden; touch-action: manipulation; }
+        #game-container { position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+        
+        /* タイトル画面 */
+        #title-screen { position: absolute; z-index: 100; text-align: center; }
+        .logo { font-size: 3rem; font-weight: bold; color: #ff0000; text-shadow: 0 0 10px #fff, 3px 3px 0 #000; margin-bottom: 20px; font-style: italic; }
+        .btn-start { padding: 15px 40px; font-size: 1.5rem; background: linear-gradient(to bottom, #ff0000, #990000); color: white; border: 4px solid #ffd700; border-radius: 50px; cursor: pointer; box-shadow: 0 5px 15px rgba(255,0,0,0.5); }
+
+        /* メイン演出 */
+        #stage { display: none; text-align: center; width: 100%; }
+        .message { font-size: 2.5rem; font-weight: bold; min-height: 3.5rem; text-shadow: 2px 2px 0 #000; }
+        .hand { display: flex; justify-content: center; gap: 2px; margin: 20px 0; }
+        .tile { width: 35px; height: 50px; background: #eee; border-radius: 4px; border: 1px solid #999; color: #000; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; position: relative; box-shadow: 2px 2px 0 #666; }
+        .tile.pin { color: #0000ff; }
+        .tile.red { color: #ff0000; }
+        
+        /* スロット演出 */
+        #slot-area { display: none; margin-top: 30px; }
+        .slot-container { display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 4rem; }
+        .target-tile { width: 80px; height: 110px; background: #fff; color: #0000ff; border: 4px solid #333; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: inset 0 0 10px rgba(0,0,0,0.2); }
+        .spinning { animation: spin 0.1s infinite linear; }
+        @keyframes spin { 0% { transform: translateY(-10px); } 50% { transform: translateY(10px); } 100% { transform: translateY(-10px); } }
+
+        /* 役満演出 */
+        #rainbow-overlay { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; display:none; z-index: 200; mix-blend-mode: screen; }
+        .yakuman-text { position: absolute; width: 100%; text-align: center; top: 40%; font-size: 5rem; font-weight: bold; color: #fff; text-shadow: 0 0 20px #f0f; z-index: 210; display: none; }
+    </style>
 </head>
 <body>
-    <div id="game-container"></div>
-    <script src="game.js"></script>
+
+<div id="game-container">
+    <div id="title-screen">
+        <div class="logo">次こそ九蓮宝燈</div>
+        <button class="btn-start" onclick="startGame()">打つ</button>
+    </div>
+
+    <div id="stage">
+        <div id="status-msg" class="message"></div>
+        <div id="player-hand" class="hand"></div>
+        
+        <div id="slot-area">
+            <div class="message" style="color:#ff0; font-size:1.5rem">連打せよ！</div>
+            <div class="slot-container">
+                <div class="target-tile">④</div>
+                <div id="spin-tile" class="target-tile spinning">?</div>
+                <div class="target-tile">⑤</div>
+            </div>
+            <button class="btn-start" style="margin-top:20px;" onclick="stopSlot()">ツモ！！</button>
+        </div>
+    </div>
+    
+    <div id="rainbow-overlay"></div>
+    <div id="yakuman-banner" class="yakuman-text">九蓮宝燈</div>
+</div>
+
+<script>
+    const handTiles = ["①","①","①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑨","⑨"];
+    const statusMsg = document.getElementById('status-msg');
+    const playerHand = document.getElementById('player-hand');
+    const slotArea = document.getElementById('slot-area');
+    const spinTile = document.getElementById('spin-tile');
+
+    function vibrate(ms) {
+        if (navigator.vibrate) navigator.vibrate(ms);
+    }
+
+    function createHand() {
+        playerHand.innerHTML = '';
+        handTiles.forEach(t => {
+            const div = document.createElement('div');
+            div.className = 'tile pin';
+            div.innerText = t;
+            playerHand.appendChild(div);
+        });
+    }
+
+    async function startGame() {
+        document.getElementById('title-screen').style.display = 'none';
+        document.getElementById('stage').style.display = 'block';
+        createHand();
+
+        // 高速展開
+        const sequence = [
+            { msg: "東1局 0点", delay: 1000 },
+            { msg: "北家：リーチ！", delay: 800, color: "white" },
+            { msg: "東家：追っかけリーチ！", delay: 800, color: "white" },
+            { msg: "激 熱", delay: 500, color: "red", scale: 2 },
+            { msg: "南家（自分）：九蓮宝燈聴牌！", delay: 1000, color: "gold" }
+        ];
+
+        for (let s of sequence) {
+            statusMsg.innerText = s.msg;
+            statusMsg.style.color = s.color || "white";
+            vibrate(50);
+            await new Promise(r => setTimeout(r, s.delay));
+        }
+
+        // 運命の分岐
+        const rand = Math.random();
+        if (rand < 0.9) {
+            // 90% 東家ツモ
+            statusMsg.innerText = "東家：ツモ！！";
+            statusMsg.style.color = "cyan";
+            vibrate([100, 50, 100]);
+            
+            setTimeout(() => {
+                alert("東家：ツモ！ 2000オール（アガリ牌：⑥筒）\n\n南家「それ、僕のアガリ牌なんですけど…」");
+                location.reload();
+            }, 1000);
+        } else {
+            // 10% プレイヤーチャンス
+            statusMsg.innerText = "ツモ番が回ってきた！";
+            vibrate(500);
+            slotArea.style.display = 'block';
+        }
+    }
+
+    function stopSlot() {
+        slotArea.style.display = 'none';
+        spinTile.classList.remove('spinning');
+        
+        const subRand = Math.random();
+        
+        if (subRand < 0.989) {
+            // ハズレ
+            spinTile.innerText = "西";
+            statusMsg.innerText = "西家：ロン！ 1000点";
+            vibrate(100);
+            setTimeout(() => { alert("クソゲー。"); location.reload(); }, 1000);
+        } else if (subRand < 0.999) {
+            // 3筒（安目）
+            spinTile.innerText = "③";
+            statusMsg.innerText = "ツモ！ 清一色。";
+            setTimeout(() => { alert("九蓮ならず…普通の清一色でした。"); location.reload(); }, 1500);
+        } else {
+            // 0.1% 九蓮宝燈！！
+            handleYakuman();
+        }
+    }
+
+    function handleYakuman() {
+        spinTile.innerText = "⑥";
+        statusMsg.innerText = "九 蓮 宝 燈 ！！";
+        statusMsg.style.color = "#f0f";
+        
+        // レインボー演出
+        const overlay = document.getElementById('rainbow-overlay');
+        overlay.style.display = 'block';
+        let hue = 0;
+        setInterval(() => {
+            overlay.style.background = `hsla(${hue}, 100%, 50%, 0.3)`;
+            hue = (hue + 10) % 360;
+        }, 50);
+
+        const banner = document.getElementById('yakuman-banner');
+        banner.style.display = 'block';
+        gsap.to(banner, { scale: 1.5, duration: 0.2, repeat: -1, yoyo: true });
+        
+        vibrate([500, 100, 500, 100, 1000]);
+        
+        setTimeout(() => {
+            alert("伝説達成！！次こそ九蓮宝燈、完！");
+            location.reload();
+        }, 5000);
+    }
+</script>
 </body>
 </html>
