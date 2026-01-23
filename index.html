@@ -128,7 +128,7 @@
         msg.innerText = "北家：ツモ切り..."; await wait(1200);
         msg.innerText = "東家のツモ番..."; await wait(2000);
 
-        const isLucky = Math.random() < 0.99;
+        const isLucky = Math.random() < 0.1;
 
         if (!isLucky) {
             const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
@@ -153,17 +153,17 @@
         await wait(1000);
         
         const sub = Math.random();
-        if (sub < 0.001) {
+        if (sub < 0.989) {
             spinTile.innerText = "西";
             msg.innerText = "ハズレ。";
             await wait(1500);
             alert("西家：ロン。1000点。\n次こそ九蓮宝燈...！");
             location.reload();
-        } else if (sub < 0.001) {
+        } else if (sub < 0.999) {
             spinTile.innerText = "③";
             msg.innerText = "ツモ！";
             await wait(1500);
-            alert("清一色・平和。2000-4000。\n「そっちじゃないんだよなぁ...」");
+            alert("清一色\n「そっちじゃないんだよなぁ...」");
             location.reload();
         } else {
             document.getElementById('rainbow-flash').style.display = 'block';
