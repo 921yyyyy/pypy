@@ -3,45 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>次こそ九蓮宝燈 -真リアル-</title>
+    <title>次こそ九蓮宝燈 -極-</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        :root { 
-            --tile-ivory: #fefef2;
-            --tile-side: #e5e5d5;
-            --table-green: radial-gradient(circle, #2d5a27 0%, #1a3a16 100%);
-        }
-        body { margin: 0; background: var(--table-green); color: #fff; font-family: "serif"; overflow: hidden; touch-action: manipulation; -webkit-user-select: none; }
-        #game-ui { width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: space-around; padding: 10px; box-sizing: border-box; }
+        :root { --bg-green: #1a4a1a; --tile-white: linear-gradient(145deg, #ffffff, #e6e6e6); }
+        body { margin: 0; background: radial-gradient(circle, #2a5a2a 0%, #0a2a0a 100%); color: #fff; font-family: "Hiragino Mincho ProN", serif; overflow: hidden; touch-action: manipulation; }
+        #game-ui { width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: space-around; padding: 20px; box-sizing: border-box; }
 
+        /* リアルな麻雀牌 */
         .tile {
-            width: 44px; height: 60px; background: var(--tile-ivory); border-radius: 4px;
-            box-shadow: inset 0 2px 3px #fff, 0 3px 0 var(--tile-side), 0 5px 0 #999, 0 8px 12px rgba(0,0,0,0.6);
-            display: flex; align-items: center; justify-content: center; position: relative;
+            width: 45px; height: 65px; background: var(--tile-white); border-radius: 4px;
+            box-shadow: 0 4px 0 #bbb, 0 6px 10px rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem; font-weight: bold; color: #0044ff; position: relative;
         }
-        .tile-content { font-size: 3.2rem; line-height: 1; filter: drop-shadow(0.5px 0.5px 0.5px rgba(0,0,0,0.5)); }
-        .p-red { color: #d32f2f; }
-        .p-mix { color: #1565c0; text-shadow: 1px 1px 0 #d32f2f; }
-        .p-black { color: #222; }
+        .tile::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 40%; background: linear-gradient(white, rgba(255,255,255,0)); border-radius: 4px 4px 0 0; opacity: 0.5; }
 
-        #main-msg { font-size: 2rem; text-align: center; font-weight: bold; text-shadow: 0 0 15px #ff0000; min-height: 70px; width: 90%; z-index: 10; }
-        .btn-pachinko { 
-            padding: 15px 50px; font-size: 1.6rem; border-radius: 50px; border: 4px solid #ffd700; 
-            background: linear-gradient(to bottom, #ff4444, #880000); color: white; 
-            box-shadow: 0 0 20px rgba(255,0,0,0.6); cursor: pointer; z-index: 20;
-            position: relative;
+        /* メッセージ演出 */
+        #main-msg { font-size: 2.2rem; text-align: center; font-weight: bold; text-shadow: 0 0 15px #ff0000; min-height: 80px; }
+
+        /* ボタン */
+        .btn-pachinko {
+            padding: 15px 60px; font-size: 1.8rem; border-radius: 50px; border: 4px solid #ffd700;
+            background: linear-gradient(to bottom, #ff4444, #880000); color: white;
+            box-shadow: 0 0 20px rgba(255,0,0,0.6), inset 0 0 10px rgba(255,255,255,0.5);
+            cursor: pointer; transition: transform 0.1s;
         }
         .btn-pachinko:active { transform: scale(0.95); }
 
-        #cut-in { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); z-index: 100; display: none; text-align: center; }
-        .big-tile { width: 130px; height: 180px; box-shadow: 0 0 50px rgba(255,255,0,0.8); }
-        .big-tile .tile-content { font-size: 8rem; }
+        /* カットイン演出 */
+        #cut-in {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+            z-index: 50; display: none; text-align: center;
+        }
+        .big-tile { width: 150px; height: 210px; font-size: 6rem; border-radius: 12px; box-shadow: 0 0 50px rgba(255,255,0,0.8); }
 
-        #slot-section { display: none; text-align: center; width: 100%; }
-        .slot-display { display: flex; gap: 10px; margin: 20px 0; justify-content: center; }
+        /* スロット */
+        #slot-section { display: none; text-align: center; }
+        .slot-display { display: flex; gap: 15px; margin: 30px 0; }
         .spinning { animation: blur-spin 0.05s infinite; }
-        @keyframes blur-spin { 0% { transform: translateY(-2px); filter: blur(1px); } 100% { transform: translateY(2px); filter: blur(3px); } }
-        #rainbow-flash { position: fixed; inset: 0; display: none; pointer-events: none; z-index: 150; animation: rainbow 0.15s infinite; opacity: 0.3; }
+        @keyframes blur-spin { 0% { filter: blur(0px); transform: translateY(-2px); } 100% { filter: blur(4px); transform: translateY(2px); } }
+
+        /* 九蓮演出 */
+        #rainbow-flash { position: fixed; inset: 0; display: none; pointer-events: none; z-index: 100; animation: rainbow 0.2s infinite; opacity: 0.3; }
         @keyframes rainbow { 0% { background: red; } 20% { background: yellow; } 40% { background: green; } 60% { background: cyan; } 80% { background: blue; } 100% { background: magenta; } }
     </style>
 </head>
@@ -49,33 +53,41 @@
 
 <div id="game-ui">
     <div id="main-msg">次こそ九蓮宝燈</div>
-    <div id="hand-display" style="display: flex; gap: 2px; flex-wrap: wrap; justify-content: center;"></div>
     
+    <div id="hand-display" style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: center;"></div>
+
     <div id="action-area">
         <button id="start-btn" class="btn-pachinko" onclick="runScenario()">打 つ</button>
     </div>
 
     <div id="slot-section">
         <div class="slot-display">
-            <div class="tile big-tile"><span class="tile-content p-mix">🀜</span></div>
-            <div id="spin-tile" class="tile big-tile spinning"><span class="tile-content p-black">？</span></div>
-            <div class="tile big-tile"><span class="tile-content p-mix">🀝</span></div>
+            <div class="tile big-tile">④</div>
+            <div id="spin-tile" class="tile big-tile spinning">?</div>
+            <div class="tile big-tile">⑤</div>
         </div>
-        <p style="color:#ffd700; font-weight:bold; font-size:1.5rem;">連打しろ！！！</p>
+        <p style="color:#ffd700; font-weight:bold;">連打しろ！！！</p>
         <button class="btn-pachinko" onclick="handleTsumo()">ツモ！！</button>
     </div>
 </div>
 
 <div id="cut-in">
-    <div id="cut-in-label" style="font-size: 1.8rem; color: #ff0000; font-weight:bold; background: rgba(0,0,0,0.8); padding: 5px 15px; border-radius: 8px; margin-bottom: 10px; border: 2px solid gold;">東家：ツモ！！</div>
-    <div class="tile big-tile"><span class="tile-content p-mix">🀞</span></div>
+    <div id="cut-in-label" style="font-size: 2rem; color: #ff0000; font-weight:bold; background: rgba(0,0,0,0.7); margin-bottom: 10px;">東家：ツモ！！</div>
+    <div id="cut-in-tile" class="tile big-tile">⑥</div>
 </div>
+
 <div id="rainbow-flash"></div>
 
 <script>
-    const handSymbols = ["🀙","🀙","🀙","🀚","🀛","🀜","🀝","🀞","🀟","🀠","🀡","🀡","🀡"];
-    const quotes = ["ツボがわかんないです","承知するっていたよな！？","次こそ九蓮宝燈！👶","すごいですけど、アガってはないですよね？","あーきもちい","逆にアガれると思います？"];
-    
+    const hand = ["①","①","①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑨","⑨"];
+    const quotes = [
+        "ツボがわかんないです",
+        "承知するっていたよな！？",
+        "次こそ九蓮宝燈！👶",
+        "すごいですけど、アガってはないですよね？",
+        "あーきもちい",
+        "逆にアガれると思います？"
+    ];
     const msg = document.getElementById('main-msg');
     const handDiv = document.getElementById('hand-display');
     const cutIn = document.getElementById('cut-in');
@@ -83,78 +95,84 @@
     function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
     function vibrate(ms) { if (navigator.vibrate) navigator.vibrate(ms); }
 
-    function createTile(symbol) {
-        const t = document.createElement('div');
-        t.className = 'tile';
-        const c = document.createElement('span');
-        c.className = 'tile-content';
-        c.innerText = symbol;
-        if (symbol === "🀙") c.classList.add('p-red');
-        else if (symbol.match(/[🀚-🀡]/)) c.classList.add('p-mix');
-        else c.classList.add('p-black');
-        t.appendChild(c);
-        return t;
-    }
-
     async function runScenario() {
         document.getElementById('start-btn').style.display = 'none';
         handDiv.innerHTML = '';
         
-        // 配牌
-        for(let s of handSymbols) {
-            handDiv.appendChild(createTile(s));
-            vibrate(20); await wait(120);
+        for(let t of hand) {
+            const div = document.createElement('div');
+            div.className = 'tile'; div.innerText = t;
+            handDiv.appendChild(div);
+            await wait(100);
         }
 
         await wait(1500);
-        msg.innerText = "北家：リーチ..."; await wait(1500);
-        msg.innerText = "東家：リーチ..."; await wait(1800);
+        msg.innerText = "北家：リーチ..."; vibrate(50);
+        await wait(1500);
+        msg.innerText = "東家：リーチ..."; vibrate(50);
+        await wait(2000);
         
-        msg.style.color = "yellow";
+        msg.style.color = "#ffff00";
         msg.innerText = "激 熱";
-        gsap.fromTo(msg, {scale: 0.5}, {scale: 1.3, duration: 0.5, ease: "back.out"});
-        await wait(1800);
+        gsap.fromTo(msg, {scale: 0.5}, {scale: 1.5, duration: 0.5, ease: "back.out"});
+        vibrate([100, 50, 100]);
+        await wait(1500);
 
-        msg.style.color = "red";
-        msg.innerText = "九蓮宝燈聴牌！！"; await wait(2500);
-        
-        msg.style.color = "white";
-        msg.innerText = "西家：ツモ切り..."; await wait(1500);
-        msg.innerText = "北家：ツモ切り..."; await wait(1500);
-        msg.innerText = "東家のツモ番..."; await wait(2500);
+        msg.style.color = "#ff0000";
+        msg.innerText = "九蓮宝燈聴牌！！";
+        vibrate(300);
+        await wait(2500);
 
-        if (Math.random() < 0.9) {
-            const q = quotes[Math.floor(Math.random() * quotes.length)];
+        msg.style.color = "#fff";
+        msg.innerText = "西家：ツモ切り..."; await wait(1200);
+        msg.innerText = "北家：ツモ切り..."; await wait(1200);
+        msg.innerText = "東家のツモ番..."; await wait(2000);
+
+        const isLucky = Math.random() < 0.1;
+
+        if (!isLucky) {
+            const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
             cutIn.style.display = 'block';
-            gsap.to(cutIn, {scale: 1, duration: 0.4, ease: "back.out"});
-            vibrate([300, 100, 300]);
-            await wait(2800);
-            alert(`東家「${q}」\n\nアガリ牌：六筒(🀞)\n2000オール。終了。`);
+            gsap.to(cutIn, {scale: 1, duration: 0.3, ease: "back.out"});
+            vibrate([200, 100, 200]);
+            msg.innerText = "東家：ツモ！！";
+            await wait(2500);
+            alert(`東家「${randomQuote}」\n\nアガリ牌：⑥筒\n2000オール。終了。`);
             location.reload();
         } else {
             msg.innerText = "奇跡のツモ番...！";
             document.getElementById('slot-section').style.display = 'block';
+            vibrate(500);
         }
     }
 
     async function handleTsumo() {
         document.getElementById('slot-section').style.display = 'none';
-        const spin = document.getElementById('spin-tile');
-        spin.classList.remove('spinning');
-        await wait(1200);
+        const spinTile = document.getElementById('spin-tile');
+        spinTile.classList.remove('spinning');
+        await wait(1000);
+        
         const sub = Math.random();
         if (sub < 0.989) {
-            spin.innerHTML = '<span class="tile-content p-black">🀂</span>';
-            alert("西家：ロン。1000点。"); location.reload();
+            spinTile.innerText = "西";
+            msg.innerText = "ハズレ。";
+            await wait(1500);
+            alert("西家：ロン。1000点。\n次こそ九蓮宝燈...！");
+            location.reload();
         } else if (sub < 0.999) {
-            spin.innerHTML = '<span class="tile-content p-mix">🀛</span>';
-            alert("清一色・平和。2000-4000。"); location.reload();
+            spinTile.innerText = "③";
+            msg.innerText = "ツモ！";
+            await wait(1500);
+            alert("清一色\n「そっちじゃないんだよなぁ...」");
+            location.reload();
         } else {
             document.getElementById('rainbow-flash').style.display = 'block';
-            spin.innerHTML = '<span class="tile-content p-mix">🀞</span>';
+            spinTile.innerText = "⑥";
             msg.innerText = "九 蓮 宝 燈 ！！";
             vibrate([500, 100, 500, 100, 1000]);
-            await wait(4000); alert("伝説達成！！"); location.reload();
+            await wait(4000);
+            alert("伝説の九蓮宝燈！おめでとう！！");
+            location.reload();
         }
     }
 </script>
