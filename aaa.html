@@ -2,70 +2,80 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>計算結果表示画面モック (Ag-Grid版)</title>
-    <link href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>計算結果表示画面 (ag-Grid実装)</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css">
+
     <style>
         body { font-family: 'Meiryo UI', sans-serif; font-size: 14pt; background: #f6f6f6; margin: 32px; }
         .summary { display: flex; gap: 32px; margin-bottom: 30px; }
         .summary-item { background: #fff; padding: 16px 32px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); min-width: 220px; text-align: center; }
-        .summary-label { color: #888; font-size: 13pt; margin-bottom: 4px; }
+        .summary-label { color: #888; font-size: 13pt; margin-bottom: 4px; display: block; }
         .summary-value { font-size: 18pt; font-weight: bold; color: #2e5371; }
-        .ag-theme-alpine { --ag-font-size: 14pt; --ag-font-family: 'Meiryo UI', sans-serif; margin-bottom: 32px; }
+        
+        /* Gridの高さ指定 */
+        #myGrid { width: 100%; height: 500px; margin-bottom: 32px; }
+        
         .buttons { display: flex; gap: 24px; margin-top: 16px; }
-        button { font-family: 'Meiryo UI'; font-size: 14pt; padding: 10px 32px; border-radius: 6px; border: none; background: #3789c7; color: #fff; cursor: pointer; transition: background 0.2s; }
+        button { font-family: 'Meiryo UI'; font-size: 14pt; padding: 10px 32px; border-radius: 6px; border: none; background: #3789c7; color: #fff; cursor: pointer; }
         button:hover { background: #2c6fa4; }
+        
+        /* セル内の詳細ボタン */
         .detail-btn { font-size: 11pt; padding: 3px 12px; margin-left: 8px; background: #62aae6; border-radius: 4px; border: none; color: #fff; cursor: pointer; }
     </style>
 </head>
 <body>
+
     <div class="summary">
         <div class="summary-item">
-            <span class="summary-label">事業別払込額合計・国民</span><br>
+            <span class="summary-label">事業別払込額合計・国民</span>
             <span class="summary-value">1,200,000</span>
         </div>
         <div class="summary-item">
-            <span class="summary-label">事業別払込額合計・農林</span><br>
+            <span class="summary-label">事業別払込額合計・農林</span>
             <span class="summary-value">850,000</span>
         </div>
         <div class="summary-item">
-            <span class="summary-label">事業別払込額合計・中小</span><br>
+            <span class="summary-label">事業別払込額合計・中小</span>
             <span class="summary-value">640,000</span>
         </div>
     </div>
 
-    <div id="myGrid" class="ag-theme-alpine" style="width: 100%; height: 540px;"></div>
+    <div id="myGrid" class="ag-theme-alpine"></div>
 
     <div class="buttons">
-        <button onclick="alert('払込金額計算項目入力に戻る')">戻る</button>
-        <button onclick="alert('仮登録が実行されました')">仮登録</button>
-        <button onclick="alert('CSVファイルを出力しました')">払込案内出力</button>
+        <button onclick="alert('戻ります')">戻る</button>
+        <button onclick="alert('仮登録しました')">仮登録</button>
+        <button onclick="alert('CSVを出力しました')">払込案内出力</button>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
     <script>
-        // ヘッダー4～13項目
+        // カラム定義
         const columnDefs = [
             {
                 headerName: "お取引番号",
                 field: "transactionId",
-                cellRenderer: params => params.value
-                    ? params.value + '<button class="detail-btn" onclick="alert(\'計算詳細表示\')">詳細</button>'
-                    : '<button class="detail-btn" style="opacity:0;pointer-events:none;">詳細</button>',
-                minWidth: 170
+                minWidth: 200,
+                cellRenderer: params => {
+                    if (!params.value) return '';
+                    return `<span>${params.value}</span><button class="detail-btn" onclick="alert('計算詳細を表示します')">詳細</button>`;
+                }
             },
-            { headerName: "払込金額", field: "paymentAmount", minWidth: 110 },
-            { headerName: "事業", field: "business", minWidth: 90 },
-            { headerName: "元金", field: "principal", minWidth: 120 },
-            { headerName: "利息", field: "interest", minWidth: 90 },
+            { headerName: "払込金額", field: "paymentAmount", minWidth: 130 },
+            { headerName: "事業", field: "business", minWidth: 100 },
+            { headerName: "元金", field: "principal", minWidth: 130 },
+            { headerName: "利息", field: "interest", minWidth: 110 },
             { headerName: "遅延損害金", field: "lateCharges", minWidth: 140 },
-            { headerName: "手数料", field: "fee", minWidth: 100 },
-            { headerName: "未収利息", field: "uncollectedInterest", minWidth: 110 },
-            { headerName: "未収遅延損害金", field: "uncollectedLateCharges", minWidth: 140 },
-            { headerName: "約定入金除外対象日", field: "excludedDate", minWidth: 170 }
+            { headerName: "手数料", field: "fee", minWidth: 110 },
+            { headerName: "未収利息", field: "uncollectedInterest", minWidth: 130 },
+            { headerName: "未収遅延損害金", field: "uncollectedLateCharges", minWidth: 150 },
+            { headerName: "約定入金除外対象日", field: "excludedDate", minWidth: 180 }
         ];
 
-        // 1行目データ（サンプル）、19行は空
+        // データ作成
         const rowData = [
             {
                 transactionId: '202406250001',
@@ -81,25 +91,32 @@
             }
         ];
 
-        for (let i = 1; i < 20; i++) {
-            rowData.push({
-                transactionId: '', paymentAmount: '', business: '', principal: '', interest: '',
-                lateCharges: '', fee: '', uncollectedInterest: '', uncollectedLateCharges: '', excludedDate: ''
-            });
+        // 画像の指示通り、残りの19行を空データで埋める
+        for (let i = 0; i < 19; i++) {
+            rowData.push({});
         }
 
-        // Grid初期化
+        // Gridのオプション設定
         const gridOptions = {
-            columnDefs,
-            rowData,
-            domLayout: 'autoHeight',
+            columnDefs: columnDefs,
+            rowData: rowData,
+            defaultColDef: {
+                resizable: true,
+                sortable: true,
+                filter: true,
+                flex: 1, // 画面幅に合わせて広がる設定
+                minWidth: 100
+            },
+            // 画像にあった設定
             suppressMovableColumns: true,
-            suppressCellSelection: true,
-            defaultColDef: { resizable: true, sortable: false, filter: false }
+            suppressCellSelection: true
         };
 
+        // 初期化
         document.addEventListener('DOMContentLoaded', () => {
-            new agGrid.Grid(document.getElementById('myGrid'), gridOptions);
+            const gridDiv = document.querySelector('#myGrid');
+            // 最新のag-Grid(v31+)の初期化方法
+            agGrid.createGrid(gridDiv, gridOptions);
         });
     </script>
 </body>
